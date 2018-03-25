@@ -1,1 +1,1 @@
-This goes in .../site-packages/keyboard
+Place the 'keyboard' folder in .../site-packages/
