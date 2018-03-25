@@ -7,7 +7,7 @@ class Circle:
    # radius
    # velocity - numpy array of shape (2,)
    
-   CIRCLE_COLOR = 200
+   CIRCLE_COLOR = 0xAA55D0
    
    def __init__(self, cx, cy, r, vx=0, vy=0):
       self.center = np.array([cx, cy], dtype='float16')
