@@ -3,66 +3,61 @@ import numpy as np
 import cv2
 from timeit import default_timer as timer
 
+import math_util
 import canvas
 
-# resolution: (x, y)
-RESOLUTION = (800, 600)
-   
+# Constants
+kResolution = (700, 500)  # 800, 600
 
-def double_interval_random(a, b, c, d):
-   ''' Assumes a < b < c < d
-      Generates a uniform random float in [a, b] union [c, d]
-      Only performs one sample
-      '''
-   interval_delta = c-b
-   rand_val = random.uniform(a, d-interval_delta)
-   if (rand_val > b):
-      rand_val += interval_delta
-   return rand_val
+# Game parameters
+kDodgerSpeed = 200  # 200
+kDodgerTurningRate = kDodgerSpeed / 2857.142857  # 0.07
+kNumCircles = 10  # 16
+kCircleRadiusRange = (6, 10)
+kCircleVelocityRange = (2, 5)
+kMiddleSpawnBufferRatio = 0.3
+
+# Debugging constant
+kPause = False
    
 def main():
-
-   PAUSE=False
-
+   # Initialize canvas
    print('Initializing canvas...')
-   canv = canvas.Canvas(*RESOLUTION)
-   canv.render_single_frame(pause=PAUSE)
-   
+   canvas_object = canvas.Canvas(*kResolution)
+   canvas_object.RenderSingleFrame(kPause)
+   # Draw borders
    print('Drawing borders...')
-   canv.draw_borders()
-   canv.render_single_frame(pause=PAUSE)
-   
-   NUM_CIRCLES = 16
-   print('Adding', NUM_CIRCLES, 'circles...')
-   RADIUS_RANGE = (6, 10)
-   VELOCITY_RANGE = (2, 5)
-   border_zone = 20
-   CX = RESOLUTION[1]/2
-   CY = RESOLUTION[0]/2
-   for count in range(NUM_CIRCLES):
-      radius = random.randint(*RADIUS_RANGE)
+   canvas_object.DrawBorders()
+   canvas_object.RenderSingleFrame(kPause)
+   # Draw circles
+   print('Adding', kNumCircles, 'circles...')
+   for count in range(kNumCircles):
+      radius = random.randint(*kCircleRadiusRange)
       # Leave space for the dodger to start in the middle
-      SPACE = 70
-      cx = double_interval_random(border_zone + radius, CX-SPACE, CX+SPACE, RESOLUTION[1]-(border_zone + radius))
-      cy = double_interval_random(border_zone + radius, CY-SPACE, CY+SPACE, RESOLUTION[0]-(border_zone + radius))
-      velocity = random.uniform(*VELOCITY_RANGE)
-      theta = random.uniform(0, 2*np.pi)
+      xmin, xmax = canvas_object.playable_area_xrange_
+      ymin, ymax = canvas_object.playable_area_yrange_
+      cx = math_util.RandomSlicedInterval(xmin, xmax, kMiddleSpawnBufferRatio)
+      cy = math_util.RandomSlicedInterval(ymin, ymax, kMiddleSpawnBufferRatio)
+      velocity = random.uniform(*kCircleVelocityRange)
+      theta = math_util.RandomAngle()
       vx = velocity * np.cos(theta)
       vy = velocity * np.sin(theta)
-      canv.add_circle(cx, cy, radius, vx, vy)
-   canv.render_single_frame(pause=PAUSE)
-   
-   DODGER_SPEED = 200
+      canvas_object.AddCircle(cx, cy, radius, vx, vy)
+   canvas_object.RenderSingleFrame(kPause)
+   # Draw dodger
    print('Adding dodger...')
-   theta = random.uniform(0, 2*np.pi)
-   canv.create_dodger(CX, CY, theta, DODGER_SPEED)
-   canv.render_single_frame(pause=True)
-   
-   # motion
-   SECONDS = 15
-   EMPIRICAL_FPS = 64
-   TOTAL_FRAMES = SECONDS*EMPIRICAL_FPS
-   canv.main_game_loop()
+   xmin, xmax = canvas_object.playable_area_xrange_
+   ymin, ymax = canvas_object.playable_area_yrange_
+   cx = math_util.RoundToInt(0.5 * (xmin + xmax))
+   cy = math_util.RoundToInt(0.5 * (ymin + ymax))
+   theta = math_util.RandomAngle()
+   canvas_object.CreateDodger(cx, cy, theta, kDodgerSpeed, kDodgerTurningRate)
+   canvas_object.RenderSingleFrame(pause=True)
+   # Motion
+   #SECONDS = 15
+   #EMPIRICAL_FPS = 64
+   #TOTAL_FRAMES = SECONDS*EMPIRICAL_FPS
+   canvas_object.MainGameLoop()
 
 if (__name__ == '__main__'):
    main()
